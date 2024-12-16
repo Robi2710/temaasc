@@ -31,7 +31,7 @@
     interval0: .asciz ": (0,0)\n"
     interval0_get: .asciz "(0,0)\n"
     interval: .asciz "%ld: (%ld, %ld)\n"
-    interval_get: .asciz "(%ld, %ld)\n"
+    interval_get: .asciz "(%ld, %ld)"
     newline: .asciz "\n"
     formatread: .asciz "%ld"
     formatprint: .asciz "%ld"
@@ -501,8 +501,9 @@ et_loop_nrfis:
     mov nrfis,%ebx
     movl i,%edx
     cmp %edx,%ebx
-    je et_newline
-    ;#cin>>dim>>desc
+    je continua_add
+
+    ;#cin>>desc>>dim
     pushl $desc
     pushl $formatread
     call scanf
@@ -513,6 +514,9 @@ et_loop_nrfis:
     call scanf
     popl %eax
     popl %eax
+    
+    cmp $9,dim
+    jl continua_add
     ;#ADD(v,desc,dim)
     pushl dim
     pushl desc
@@ -524,16 +528,7 @@ et_loop_nrfis:
 
     inc i
     jmp et_loop_nrfis
-et_newline:
-    ;#cout<<endl
-    push $newline
-    call printf
-    popl %eax
-
-    pushl $0
-    call fflush
-    popl %eax
-
+continua_add:
     inc i1
     jmp et_for
 et_read_get:
@@ -551,15 +546,6 @@ et_read_get:
     popl %edx
     popl %edx
 
-    ;#cout<<endl
-    push $newline
-    call printf
-    popl %edx
-
-    pushl $0
-    call fflush
-    popl %edx
-
     inc i1
     jmp et_for
 et_read_delete:
@@ -574,14 +560,6 @@ et_read_delete:
     call DELETE
     popl %edx
     popl %edx
-    
-    push $newline
-    call printf
-    popl %edx
-
-    pushl $0
-    call fflush
-    popl %edx
 
     inc i1
     jmp et_for
@@ -589,15 +567,6 @@ et_read_defrag:
     ;#DEFRAGMENTATION(v)
     pushl v
     call DEFRAGMENTATION
-    popl %edx
-
-    ;#cout<<endl
-    push $newline
-    call printf
-    popl %edx
-
-    pushl $0
-    call fflush
     popl %edx
 
     inc i1
