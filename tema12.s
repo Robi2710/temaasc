@@ -20,6 +20,7 @@
     i5: .space 4
     i6: .space 4
     i7: .space 4
+    i8: .space 4
     start: .space 4
     start2: .space 4
     start3: .space 4
@@ -28,8 +29,9 @@
     found: .space 4
     desccurent: .space 4
     desccurent2: .space 4
-    interval0: .asciz ": (0,0)\n"
-    interval0_get: .asciz "(0,0)\n"
+    interval0: .asciz ": (0, 0)\n"
+    interval0_get: .asciz "(0, 0)\n"
+    interval0_add: .asciz "%ld: (0, 0)\n"
     interval: .asciz "%ld: (%ld, %ld)\n"
     interval_get: .asciz "(%ld, %ld)"
     newline: .asciz "\n"
@@ -48,7 +50,8 @@ ADD:
     add $7,%eax
     shr $3,%eax
     movl %eax,cnt
-
+    cmp $1024,%eax
+    jg afisare0_add
     movl $0,k
 ;#for (i=0; i<1024; i++)
 loop_add_proced:
@@ -59,19 +62,21 @@ loop_add_proced:
 
     movl $1,canfit
     ;#for (j=0; j<cnt; j++)
+    movl $0,i8
     mov $0, %ebx
     lea v,%edi
 loop_add_proced_2:
     movl cnt,%edx
+    movl i8,%ebx
     cmp %ebx,%edx
     je et_canfit
     ;#if (v[i+j] !=0 )
-    mov %ebx,%edx
+    movl i8,%edx
     addl %ecx,%edx
     movl (%edi,%edx,4),%eax
     cmp $0,%eax
     jne et_canfit_0
-    inc %ebx
+    inc i8
     jmp loop_add_proced_2
 ;#canfit=false break
 et_canfit_0:
@@ -88,9 +93,20 @@ et_canfit:
     je loop_add_proced
     ;#startindex=i break
     sub $1,%ecx
+    ;# extra boundary check
+    movl %ecx,%edx
+    add cnt,%edx
+    dec %edx
+    cmp $1024,%edx
+    ja afisare0_add
     mov %ecx,startindex
 et_startindex:
     ;#if startindex != -1
+    mov startindex, %edx
+    add cnt, %edx
+    dec %edx
+    cmp $1024, %edx
+    ja afisare0_add
     cmp $-1,%ecx
     jne final_loop_add
     
@@ -128,6 +144,8 @@ afisare:
     addl cnt,%eax
     sub $2,%eax
     sub $1,startindex
+    cmp $-1,startindex
+    je afisare0_add
     pushl %eax
     pushl startindex
     pushl desc
@@ -144,17 +162,32 @@ afisare:
 
     popl %ebp
     ret
+afisare0_add:
+    ;#cout<<"desc: (0, 0)\n"
+    movl 12(%ebp),%eax
+    pushl %eax
+    pushl $interval0_add
+    call printf
+    popl %eax
+    popl %eax
+
+    pushl $0
+    call fflush
+    popl %eax
+
+    popl %ebp
+    ret
 GET:
     pushl %ebp
     mov %esp,%ebp
     
     movl $-1,start 
     movl $-1,end
-    movl $1,i2
+    movl $0,i2
     ;#for (i=1; i<256; i++)
 et_for1_get:
     movl i2,%ecx
-    movl $256,%eax
+    movl $1024,%eax
     cmp %ecx,%eax
     je indici
 
@@ -572,6 +605,10 @@ et_read_defrag:
     inc i1
     jmp et_for
 exit:
+    pushl $0
+    call fflush
+    popl %eax
+
     mov $1, %eax
     xor %ebx,%ebx
     int $0x80
