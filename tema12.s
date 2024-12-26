@@ -53,6 +53,7 @@ ADD:
     cmp $1024,%eax
     jg afisare0_add
     movl $0,k
+    movl $-1,startindex
 ;#for (i=0; i<1024; i++)
 loop_add_proced:
     movl $1024,%eax
@@ -145,7 +146,7 @@ afisare:
     sub $2,%eax
     sub $1,startindex
     cmp $-1,startindex
-    je afisare0_add
+    jle afisare0_add
     pushl %eax
     pushl startindex
     pushl desc
@@ -184,7 +185,7 @@ GET:
     movl $-1,start 
     movl $-1,end
     movl $0,i2
-    ;#for (i=1; i<256; i++)
+    ;#for (i=0; i<1024; i++)
 et_for1_get:
     movl i2,%ecx
     movl $1024,%eax
@@ -217,7 +218,10 @@ indici:
     cmp $-1,%eax
     je afisare0
     ;#cout<<"("<<start<<","<<end<<")\n"
+    cmp $1023,end
+    je afisare_get
     sub $1,end
+afisare_get:
     sub $1,start
     pushl end
     pushl start
@@ -260,10 +264,10 @@ DELETE:
 
     movl $0,found
     movl $0,i3
-    ;#for (i=1; i<256; i++)
+    ;#for (i=0; i<1024; i++)
 et_for1_delete:
     movl i3,%ecx
-    movl $256,%eax
+    movl $1024,%eax
     cmp %ecx,%eax
     je indici_delete
 
@@ -290,9 +294,9 @@ indici_delete:
     cmp $1,%eax
     jne et_return
 et_for2_delete:
-    ;#for(i=0; i<256)
+    ;#for(i=0; i<1024)
     movl i4,%ecx
-    movl $256,%eax
+    movl $1024,%eax
     cmp %ecx,%eax
     je et_return
     ;#if (v[i]!=0)
@@ -307,15 +311,17 @@ et_for2_delete:
     movl %eax,desccurent
     ;#while (i<256 && v[i]==desccurent)
 et_while:
-    cmp $256,%ecx
+    movl i4,%ecx
+    cmp $1024,%ecx
     je afisare_delete
-
+    
     movl i4,%edx
     lea v,%edi
     movl (%edi,%edx,4),%eax
     cmp desccurent,%eax
     jne afisare_delete
     inc i4
+    movl i4,%ecx
     jmp et_while
 et_continue:
     inc i4
@@ -323,7 +329,11 @@ et_continue:
 afisare_delete:
     ;#cout<<desccurent<<": (start2,i-1)\n"
     movl i4,%eax
-    sub $2,%eax
+    sub $1,%eax
+    cmp $1023,%eax
+    je afisare_delete_2
+    sub $1,%eax
+afisare_delete_2:
     sub $1,start2
     pushl %eax
     pushl start2
@@ -339,7 +349,6 @@ afisare_delete:
     call fflush
     popl %eax
 
-    
     jmp et_for2_delete
 et_return:
     popl %ebp
