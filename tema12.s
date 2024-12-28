@@ -43,77 +43,58 @@
 ADD:
     pushl %ebp
     mov %esp,%ebp
-    ;#cnt=dim/8 + (dim%8!=0)
     movl 16(%ebp), %eax
-    movl $0,%ecx
-    mov $0, %edx
-    add $7,%eax
-    shr $3,%eax
-    movl %eax,cnt
-    cmp $1024,%eax
+    add $7, %eax
+    shr $3, %eax
+    movl %eax, cnt
+    cmp $1024, %eax
     jg afisare0_add
-    movl $0,k
-    movl $-1,startindex
-;#for (i=0; i<1024; i++)
+    movl $0, k
+    movl $-1, startindex
+
 loop_add_proced:
-    movl $1024,%eax
-    movl k,%ecx
-    cmp %ecx,%eax
+    movl $1023, %eax
+    movl k, %ecx
+    cmp %ecx, %eax
     je et_startindex
 
-    movl $1,canfit
-    ;#for (j=0; j<cnt; j++)
-    movl $0,i8
-    mov $0, %ebx
-    lea v,%edi
+    movl $1, canfit
+    movl $0, i8
+    lea v, %edi
 loop_add_proced_2:
-    movl cnt,%edx
-    movl i8,%ebx
-    cmp %ebx,%edx
+    movl cnt, %edx
+    movl i8, %ebx
+    cmp %ebx, %edx
     je et_canfit
-    ;#if (v[i+j] !=0 )
-    movl i8,%edx
-    addl %ecx,%edx
-    movl (%edi,%edx,4),%eax
-    cmp $0,%eax
+
+    movl i8, %edx
+    addl %ecx, %edx
+    cmp $1023, %edx
+    ja et_canfit_0
+    movl (%edi, %edx, 4), %eax
+    cmp $0, %eax
     jne et_canfit_0
+
     inc i8
     jmp loop_add_proced_2
-;#canfit=false break
 et_canfit_0:
-    mov $0,canfit
+    mov $0, canfit
     inc k
     jmp loop_add_proced
 et_canfit:
-    ;#if (canfit==true)
-    mov %ecx,canfit
-    inc %ecx
-    mov canfit, %eax
-    inc k
-    cmp $0,%eax
-    je loop_add_proced
-    ;#startindex=i break
-    sub $1,%ecx
-    ;# extra boundary check
-    movl %ecx,%edx
-    add cnt,%edx
-    dec %edx
-    cmp $1024,%edx
-    ja afisare0_add
-    mov %ecx,startindex
-et_startindex:
-    ;#if startindex != -1
-    mov startindex, %edx
+    mov %ecx, startindex
+    movl %ecx, %edx
     add cnt, %edx
     dec %edx
     cmp $1024, %edx
     ja afisare0_add
-    cmp $-1,%ecx
+
+et_startindex:
+    cmp $-1, startindex
     jne final_loop_add
-    
-    ;#cout<<desc<<": (0,0)\n"
+
     pushl desc
-    pushl $interval0
+    pushl $interval0_add
     call printf
     popl %eax
     popl %eax
@@ -125,27 +106,23 @@ et_startindex:
     popl %ebp
     ret
 final_loop_add:
-    ;#for (i=0; i<cnt; i++)
-    mov $0,%ecx
-    mov cnt,%eax
-    et_loop:
-    cmp %ecx,%eax
+    mov $0, %ecx
+    mov cnt, %eax
+et_loop:
+    cmp %ecx, %eax
     je afisare
 
-    ;#v[startindex+i]=desc
     movl startindex, %ebx
-    addl %ecx,%ebx
-    movl 12(%ebp),%edx
-    movl %edx,(%edi,%ebx,4)
+    addl %ecx, %ebx
+    movl 12(%ebp), %edx
+    movl %edx, (%edi, %ebx, 4)
     inc %ecx
     jmp et_loop
 afisare:
-    ;#cout<<desc<<": (startindex,startindex+cnt-1)\n"
-    movl startindex,%eax
-    addl cnt,%eax
-    sub $2,%eax
-    sub $1,startindex
-    cmp $-1,startindex
+    movl startindex, %eax
+    addl cnt, %eax
+    sub $1, %eax
+    cmp $-1, startindex
     jle afisare0_add
     pushl %eax
     pushl startindex
@@ -164,9 +141,7 @@ afisare:
     popl %ebp
     ret
 afisare0_add:
-    ;#cout<<"desc: (0, 0)\n"
-    movl 12(%ebp),%eax
-    pushl %eax
+    pushl desc
     pushl $interval0_add
     call printf
     popl %eax
@@ -178,6 +153,7 @@ afisare0_add:
 
     popl %ebp
     ret
+
 GET:
     pushl %ebp
     mov %esp,%ebp
@@ -218,11 +194,7 @@ indici:
     cmp $-1,%eax
     je afisare0
     ;#cout<<"("<<start<<","<<end<<")\n"
-    cmp $1023,end
-    je afisare_get
-    sub $1,end
 afisare_get:
-    sub $1,start
     pushl end
     pushl start
     pushl $interval_get
@@ -261,7 +233,7 @@ afisare0:
 DELETE:
     pushl %ebp
     mov %esp,%ebp
-
+    
     movl $0,found
     movl $0,i3
     ;#for (i=0; i<1024; i++)
@@ -291,8 +263,7 @@ indici_delete:
     ;#if (found==true)
     movl found,%eax
     movl $0,i4
-    cmp $1,%eax
-    jne et_return
+    
 et_for2_delete:
     ;#for(i=0; i<1024)
     movl i4,%ecx
@@ -309,7 +280,7 @@ et_for2_delete:
     movl %ecx,start2
     ;#desccurent=v[i]
     movl %eax,desccurent
-    ;#while (i<256 && v[i]==desccurent)
+    ;#while (i<1024 && v[i]==desccurent)
 et_while:
     movl i4,%ecx
     cmp $1024,%ecx
@@ -329,14 +300,13 @@ et_continue:
 afisare_delete:
     ;#cout<<desccurent<<": (start2,i-1)\n"
     movl i4,%eax
-    sub $1,%eax
     cmp $1023,%eax
     je afisare_delete_2
     sub $1,%eax
 afisare_delete_2:
-    sub $1,start2
+    movl start2,%edx
     pushl %eax
-    pushl start2
+    pushl %edx
     pushl desccurent
     pushl $interval
     call printf
@@ -364,10 +334,10 @@ DEFRAGMENTATION:
     movl $-1, start3
     movl $-1, end2
     movl $0, desccurent2
-    ;#for (i=0; i<256; i++)
+    ;#for (i=0; i<1024; i++)
 et_for1_defrag:
     movl i5,%ecx
-    movl $256,%eax
+    movl $1023,%eax
     cmp %ecx,%eax
     je et_for2_defrag
 
@@ -391,8 +361,8 @@ actualizare_temp:
     inc i5
     jmp et_for1_defrag
 et_for2_defrag:
-    ;#for (i=0; i<256; i++)
-    movl $256,%eax
+    ;#for (i=0; i<1024; i++)
+    movl $1023,%eax
     cmp i6,%eax
     je et_for3_defrag
 
@@ -405,8 +375,8 @@ et_for2_defrag:
     inc i6
     jmp et_for2_defrag
 et_for3_defrag:
-    ;#for (i=0; i<256; i++)
-    movl $256,%eax
+    ;#for (i=0; i<1024; i++)
+    movl $1023,%eax
     movl i7,%ecx
     cmp %ecx,%eax
     je afisare_finala
@@ -444,6 +414,7 @@ for_continue_defrag:
     jmp et_for3_defrag
 afisare_defrag:
     ;#cout<<desccurent2<<": (start3,end2)\n"
+    inc end2
     pushl end2
     pushl start3
     pushl desccurent2
