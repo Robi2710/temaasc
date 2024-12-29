@@ -29,6 +29,7 @@
     found: .space 4
     desccurent: .space 4
     desccurent2: .space 4
+    aux: .space 4
     interval0: .asciz ": (0, 0)\n"
     interval0_get: .asciz "(0, 0)\n"
     interval0_add: .asciz "%ld: (0, 0)\n"
@@ -301,7 +302,6 @@ afisare_delete:
     ;#cout<<desccurent<<": (start2,i-1)\n"
     movl i4,%eax
     cmp $1023,%eax
-    je afisare_delete_2
     sub $1,%eax
 afisare_delete_2:
     movl start2,%edx
@@ -326,121 +326,88 @@ et_return:
 DEFRAGMENTATION:
     pushl %ebp
     mov %esp,%ebp
+   
+    movl $0, index      ;# Initialize index to 0
+    movl $0, i5         ;# Initialize i5 to 0
+    movl $0, i6         ;# Initialize i6 to 0
+    movl $0, i7         ;# Initialize i7 to 0
+    movl $-1, start3    ;# Initialize start3 to -1
+    movl $-1, end2      ;# Initialize end2 to -1
+    movl $0, desccurent2;# Initialize desccurent2 to 0
 
-    movl $0, index
-    movl $0, i5
-    movl $0, i6
-    movl $0, i7
-    movl $-1, start3
-    movl $-1, end2
-    movl $0, desccurent2
-    ;#for (i=0; i<1024; i++)
-et_for1_defrag:
+    ;# Loop through the array and copy non-zero elements to the front
+et_loop1_defrag:
     movl i5,%ecx
-    movl $1023,%eax
+    movl $1024,%eax
     cmp %ecx,%eax
-    je et_for2_defrag
+    je et_loop2_defrag
 
-    ;#if (v[i] != 0)
+    ;# If v[i5] != 0
     movl i5,%edx
     lea v,%edi
     movl (%edi,%edx,4),%eax
     cmp $0,%eax
-    jne actualizare_temp
+    je et_continue1_defrag
+
+    ;# aux = v[i5], v[i5] = 0, v[i6] = aux, i6++
+    movl %eax,aux
+    movl $0,(%edi,%edx,4)
+    lea v,%edi
+    movl i6,%ebx
+    movl aux, %ecx
+    movl %ecx,(%edi,%ebx,4)
+    inc i6
+    inc i5 
+    jmp et_loop1_defrag
+
+et_continue1_defrag:
     inc i5
-    jmp et_for1_defrag
-actualizare_temp:
-    ;#temp[index++]=v[i]
-    movl i5,%edx
+    jmp et_loop1_defrag
+
+    ;# Loop to print intervals of descriptors
+et_loop2_defrag:
+    movl i7,%ecx
+    movl $1024,%eax
+    cmp %ecx,%eax
+    je et_return_defrag
+
+    ;# If v[i7] != 0
+    movl i7,%edx
     lea v,%edi
     movl (%edi,%edx,4),%eax
-    lea temp,%esi 
-    movl index,%ebx
-    movl %eax,(%esi,%ebx,4)
-    inc index
-    inc i5
-    jmp et_for1_defrag
-et_for2_defrag:
-    ;#for (i=0; i<1024; i++)
-    movl $1023,%eax
-    cmp i6,%eax
-    je et_for3_defrag
+    cmp $0,%eax
+    je et_continue2_defrag
 
-    ;#v[i]=temp[i]
-    lea v,%edi
-    lea temp,%esi
-    movl i6,%edx
-    movl (%esi,%edx,4),%eax
-    movl %eax,(%edi,%edx,4)
-    inc i6
-    jmp et_for2_defrag
-et_for3_defrag:
-    ;#for (i=0; i<1024; i++)
-    movl $1023,%eax
+    ;# start3 = i7, desccurent2 = v[i7]
+    movl i7,%edx
+    movl %edx,start3
+    movl %eax,desccurent2
+
+    ;# While i7 < 1024 && v[i7] == descurent2
+et_while_defrag:
     movl i7,%ecx
-    cmp %ecx,%eax
-    je afisare_finala
-
-    ;#if (v[i] != desccurent2 && v[i] != 0)
+    cmp $1024,%ecx
+    je defrag_afisare
+    
     movl i7,%edx
     lea v,%edi
     movl (%edi,%edx,4),%eax
     cmp desccurent2,%eax
-    je verifica_dif0
-    cmp $0,%eax
-    je verifica_dif0
-
-    ;#if (start3==-1)
-    movl start3,%eax
-    cmp $-1,%eax
-    jne afisare_defrag
-
-    ;#desccurent2=v[i]
-actualizare_desc:
-    lea v,%edi
-    movl (%edi,%edx,4),%eax
-    movl %eax,desccurent2
-    ;#start3=i
-    movl %ecx,start3
-verifica_dif0:
-    ;#if v[i] != 0 end2=i
-    cmp $0,%eax
-    je for_continue_defrag
-    movl %ecx,end2
+    jne defrag_afisare
     inc i7
-    jmp et_for3_defrag
-for_continue_defrag:
+    jmp et_while_defrag 
+
+et_continue2_defrag:
     inc i7
-    jmp et_for3_defrag
-afisare_defrag:
-    ;#cout<<desccurent2<<": (start3,end2)\n"
-    inc end2
-    pushl end2
-    pushl start3
-    pushl desccurent2
-    pushl $interval
-    call printf
-    popl %eax
-    popl %eax
-    popl %eax
-    popl %eax
+    jmp et_loop2_defrag
 
-    pushl $0
-    call fflush
-    popl %eax
-    
-    movl $-1,start3
-    movl $0,desccurent2
-    jmp et_for3_defrag
-afisare_finala:
-    ;#if start3 != -1
-    movl start3,%eax
-    cmp $-1,%eax
-    je defrag_ret
-
-    ;#cout<<desccurent2<<": (start3,end2)\n"
-    pushl end2
-    pushl start3
+defrag_afisare:
+    ;# Print desccurent2: (start3, i7-1)
+    movl i7,%eax
+    sub $1,%eax
+    movl start3,%edx
+    pushl %eax
+    pushl %edx
     pushl desccurent2
     pushl $interval
     call printf
@@ -453,10 +420,12 @@ afisare_finala:
     call fflush
     popl %eax
 
-defrag_ret:
+    jmp et_loop2_defrag
+
+et_return_defrag:
     popl %ebp
     ret
-    
+
 .global main
 main:
     ;#cin>>n
