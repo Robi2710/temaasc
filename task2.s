@@ -292,7 +292,7 @@ afisare_GET:
     jmp exit_get
 afisare0_GET:
     ;#cout<<"((0,0), (0,0))\n"
-    pushl formatGET_0
+    pushl $formatGET_0
     call printf
     popl %eax
 
