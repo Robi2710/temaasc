@@ -1,10 +1,12 @@
 .data
     a: .space 4194304
+    temp: .space 4194304
     nrinstr: .space 4
     instr: .space 4
     nrfis: .space 4
     i: .space 4
-    i1: .space 4
+    i1: .space 8
+    i2: .space 4
     j: .space 4
     k: .space 4
     l: .space 4
@@ -12,8 +14,10 @@
     cnt: .space 4
     dim: .space 4
     start_row: .space 4
+    currentrow: .space 4
     start_col: .space 4
     end_col: .space 4
+    currentcol: .space 4
     row: .space 4
     currentdesc: .space 4
     found: .space 4
@@ -447,6 +451,237 @@ exit_DELETE:
     movl %ebp, %esp
     popl %ebp
     ret
+DEFRAGMENTATION:
+    pushl %ebp          
+    movl %esp, %ebp
+    pushl %ebx
+    pushl %esi
+    pushl %edi
+    
+    movl $0,i1
+clear_temp:
+    movl i1, %eax
+    cmpl $1048576, %eax
+    je et_continue_DEFRAGMENTATION
+    lea temp, %edi
+    movl $0, (%edi,%eax,4)
+    inc i1
+    jmp clear_temp
+et_continue_DEFRAGMENTATION: 
+    movl $0,k
+    movl $0,currentrow
+    movl $0,currentcol
+    movl $0,i2
+    ;#for (int i=0; i<1024; i++)
+    movl $0,i1
+et_for_DEFRAGMENTATION:
+    movl $1024, %eax
+    movl i1, %ecx
+    cmp %ecx, %eax
+    je et_for4_DEFRAGMENTATION
+
+    ;#for (int j=0; j<1024;)
+    movl $0,j
+et_for2_DEFRAGMENTATION:
+    movl $1024, %eax
+    movl j, %ecx
+    cmp %ecx, %eax
+    je et_for_DEFRAGMENTATION_continue
+
+    ;#if (a[i][j]!=0)
+    movl i1, %eax
+    movl $0, %edx
+    movl $1024, %ebx
+    mull %ebx
+    add j, %eax
+    lea a, %edi
+    movl (%edi,%eax,4), %ebx
+    cmp $0, %ebx
+    je et_for2_DEFRAGMENTATION_continue
+    ;#currentdesc=a[i][j] cnt=0
+    movl %ebx, currentdesc
+    movl $0, cnt
+    ;#while (j+cnt<1024 && a[i][j+cnt]==currentdesc)
+et_while_DEFRAGMENTATION:
+    movl $1024, %eax
+    movl j, %ecx
+    add cnt, %eax
+    cmp %ecx, %eax
+    je verifloc_DEFRAGMENTATION
+
+    movl i1, %eax
+    movl $0, %edx
+    movl $1024, %ebx
+    mull %ebx
+    add j, %eax
+    add cnt, %eax
+    lea a, %edi
+    movl (%edi,%eax,4), %ebx
+    cmp currentdesc, %ebx
+    jne verifloc_DEFRAGMENTATION
+    inc cnt
+    jmp et_while_DEFRAGMENTATION
+et_for2_DEFRAGMENTATION_continue:
+    inc j 
+    jmp et_for2_DEFRAGMENTATION
+verifloc_DEFRAGMENTATION:
+    ;#if (currentcol+cnt>1024)
+    movl currentcol, %eax
+    add cnt, %eax
+    cmp $1024, %eax
+    jle et_for3_DEFRAGMENTATION_2
+    inc currentrow
+    movl $0, currentcol
+    ;#for (int k=0; k<cnt; k++)
+et_for3_DEFRAGMENTATION_2:
+    movl $0,k
+et_for3_DEFRAGMENTATION:
+    movl cnt, %eax
+    movl k, %ecx
+    cmp %ecx, %eax
+    je et_for2_DEFRAGMENTATION_continue_2
+
+    ;#temp[currentrow][currentcol+k]=currentdesc
+    movl currentrow, %eax
+    movl $0, %edx
+    movl $1024, %ebx
+    mull %ebx
+    add currentcol, %eax
+    add k, %eax
+    lea temp, %edi
+    movl currentdesc, %ebx
+    movl %ebx, (%edi,%eax,4)
+    inc k
+    jmp et_for3_DEFRAGMENTATION
+et_for2_DEFRAGMENTATION_continue_2:
+    ;#currentcol += cnt j+=cnt
+    movl cnt, %eax
+    add currentcol, %eax
+    movl %eax, currentcol
+    movl j, %eax
+    add cnt, %eax
+    movl %eax, j
+    jmp et_for2_DEFRAGMENTATION
+et_for4_DEFRAGMENTATION:
+    ;# for (i=0; i<1024; i++)
+    movl i2, %eax
+    movl $1024, %ebx
+    cmp %eax, %ebx
+    je afisare_DEFRAGMENTATION
+
+    ;#for (int j=0; j<1024; j++)
+    movl $0,j
+et_for5_DEFRAGMENTATION:
+    movl $1024, %ecx
+    movl j, %edx
+    cmp %edx, %ecx
+    je et_for4_DEFRAGMENTATION_continue 
+
+    ;#a[i][j]=temp[i][j]
+    movl i2, %eax
+    movl $0, %ebx
+    movl $1024, %ecx
+    mull %ecx
+    add j, %eax
+    lea a, %edi
+    lea temp, %esi
+    movl (%esi,%eax,4), %ebx
+    movl %ebx, (%edi,%eax,4)
+    inc j
+    jmp et_for5_DEFRAGMENTATION
+et_for4_DEFRAGMENTATION_continue:
+    inc i2
+    jmp et_for4_DEFRAGMENTATION
+et_for_DEFRAGMENTATION_continue:
+    inc i1
+    jmp et_for_DEFRAGMENTATION
+afisare_DEFRAGMENTATION:
+    ;#for (i=0; i<1024; i++)
+    movl $0,i1
+et_for6_DEFRAGMENTATION:
+    movl $1024, %eax
+    movl i1, %ecx
+    cmp %ecx, %eax
+    je exit_DEFRAGMENTATION
+
+    ;#for (int j=0; j<1024;)
+    movl $0,j
+et_for7_DEFRAGMENTATION:
+    movl $1024, %eax
+    movl j, %ecx
+    cmp %ecx, %eax
+    je et_for6_DEFRAGMENTATION_continue
+
+    ;#if (a[i][j]!=0)
+    movl i1, %eax
+    movl $0, %edx
+    movl $1024, %ebx
+    mull %ebx
+    add j, %eax
+    lea a, %edi
+    movl (%edi,%eax,4), %ebx
+    cmp $0, %ebx
+    je et_for7_DEFRAGMENTATION_continue
+    ;#row = i start_col=j currentdesc=a[i][j]
+    movl i1, %eax
+    movl %eax, row
+    movl j, %eax
+    movl %eax, start_col
+    movl %ebx, currentdesc
+    ;#while (j < 1024 && a[i][j]==currentdesc)
+et_while_defragmentation:
+    movl $1024, %eax
+    movl j, %ecx
+    cmp %ecx, %eax
+    je afisare_DEFRAGMENTATION_2
+
+    movl i1, %eax
+    movl $0, %edx
+    movl $1024, %ebx
+    mull %ebx
+    add j, %eax
+    lea a, %edi
+    movl (%edi,%eax,4), %ebx
+    cmp currentdesc, %ebx
+    jne afisare_DEFRAGMENTATION_2
+    inc j
+    jmp et_while_defragmentation
+et_for6_DEFRAGMENTATION_continue:
+    inc i1
+    jmp et_for6_DEFRAGMENTATION
+et_for7_DEFRAGMENTATION_continue:
+    inc j
+    jmp et_for7_DEFRAGMENTATION  
+afisare_DEFRAGMENTATION_2:
+    ;#cout<<"currentdesc: ((row, start_col), (row, j-1))\n"
+    movl j, %eax
+    dec %eax
+    pushl %eax
+    pushl row
+    pushl start_col
+    pushl row
+    pushl currentdesc
+    pushl $formatADD
+    call printf
+    popl %eax
+    popl %eax
+    popl %eax
+    popl %eax
+    popl %eax
+    popl %eax 
+
+    pushl $0
+    call fflush
+    popl %eax
+
+    jmp et_for7_DEFRAGMENTATION
+exit_DEFRAGMENTATION:  
+    popl %edi           
+    popl %esi
+    popl %ebx
+    movl %ebp, %esp
+    popl %ebp
+    ret
 .global main
 main:
     ;#cin>>nrinstr
@@ -485,6 +720,9 @@ et_for_main:
     mov $3, %edx 
     cmp %ebx, %edx 
     je apelare_DELETE
+    mov $4, %edx
+    cmp %ebx, %edx
+    je apelare_DEFRAGMENTATION
     inc i 
     jmp et_for_main
 apelare_add:
@@ -500,6 +738,11 @@ apelare_GET:
 apelare_DELETE:
     ;#DELETE()
     call DELETE
+    inc i
+    jmp et_for_main
+apelare_DEFRAGMENTATION:
+    ;#DEFRAGMENTATION()
+    call DEFRAGMENTATION
     inc i
     jmp et_for_main
 exit_main:
