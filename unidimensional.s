@@ -327,15 +327,14 @@ DEFRAGMENTATION:
     pushl %ebp
     mov %esp,%ebp
    
-    movl $0, index      ;# Initialize index to 0
-    movl $0, i5         ;# Initialize i5 to 0
-    movl $0, i6         ;# Initialize i6 to 0
-    movl $0, i7         ;# Initialize i7 to 0
-    movl $-1, start3    ;# Initialize start3 to -1
-    movl $-1, end2      ;# Initialize end2 to -1
-    movl $0, desccurent2;# Initialize desccurent2 to 0
+    movl $0, index      
+    movl $0, i5         
+    movl $0, i6         
+    movl $0, i7         
+    movl $-1, start3    
+    movl $-1, end2      
+    movl $0, desccurent2
 
-    ;# Loop through the array and copy non-zero elements to the front
 et_loop1_defrag:
     movl i5,%ecx
     movl $1024,%eax
@@ -364,7 +363,6 @@ et_continue1_defrag:
     inc i5
     jmp et_loop1_defrag
 
-    ;# Loop to print intervals of descriptors
 et_loop2_defrag:
     movl i7,%ecx
     movl $1024,%eax
